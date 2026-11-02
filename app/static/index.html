@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spatial Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%232563eb'/%3E%3Cpath d='M5 16h22M16 3c5 4 5 22 0 26M16 3c-5 4-5 22 0 26' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/vendor/codemirror.css">
+<link rel="stylesheet" href="/static/vendor/show-hint.css">
+<link rel="stylesheet" href="/static/vendor/maplibre-gl.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="var(--accent)"/><path d="M5 16h22M16 3c5 4 5 22 0 26M16 3c-5 4-5 22 0 26" stroke="#fff" stroke-width="2" fill="none"/></svg>
+    <span>Spatial Studio</span><small>for SQL Server 2025</small>
+  </div>
+  <button id="connPill" class="pill" title="Connection settings"><span class="dot"></span><span id="connText">Connecting…</span></button>
+  <div class="spacer"></div>
+  <button class="btn" id="btnInstall" title="Create the SpatialStudio database, the sx library and the sample data">Install sample DB</button>
+  <button class="btn" id="btnSelfTest" title="Run every demo and report which pass">Self-test</button>
+  <button class="btn" id="btnImport" title="Load a GeoJSON file into a lab table">Import GeoJSON</button>
+  <button class="btn icon" id="btnTheme" title="Light / dark">◐</button>
+  <button class="btn icon" id="btnHelp" title="Help">?</button>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="search"><input id="demoSearch" type="search" placeholder="Search demos, methods, tags…" autocomplete="off"></div>
+    <div id="demoTree" class="tree"></div>
+    <div class="sidefoot"><span id="demoCount"></span></div>
+  </aside>
+
+  <main class="main">
+    <section class="editorPane" id="editorPane">
+      <div class="demoInfo" id="demoInfo">
+        <div class="demoTitle" id="demoTitle">Pick a demo on the left, or write your own T-SQL.</div>
+        <div class="demoDesc" id="demoDesc">Ctrl+Enter or F5 runs (the selection, if any). Every spatial column in every result set becomes a layer.</div>
+        <div class="tags" id="demoTags"></div>
+      </div>
+      <div class="editorBar">
+        <button class="btn primary" id="btnRun" title="Run (Ctrl+Enter / F5)">▶ Run</button>
+        <button class="btn" id="btnCancel" title="Cancel the running query" disabled>■ Stop</button>
+        <button class="btn" id="btnExplain" title="Estimated plan (Ctrl+L)">Explain</button>
+        <label class="small">Max rows <input id="maxRows" type="number" min="1" max="50000" value="20000"></label>
+        <span class="spacer"></span>
+        <span id="runStatus" class="runStatus"></span>
+      </div>
+      <div class="editorWrap"><textarea id="sql"></textarea></div>
+    </section>
+    <div class="splitter" id="splitter" title="Drag to resize"></div>
+    <section class="outPane">
+      <nav class="tabs" id="tabs">
+        <button data-tab="map">Map</button>
+        <button data-tab="plane">Plane</button>
+        <button data-tab="results">Results <span class="count" id="rsCount"></span></button>
+        <button data-tab="messages">Messages <span class="count" id="msgCount"></span></button>
+        <button data-tab="inspector">Inspector</button>
+        <button data-tab="explain">Explain</button>
+        <button data-tab="selftest">Self-test</button>
+      </nav>
+      <div class="tabBody">
+        <div class="tab" data-tab="map">
+          <div class="viewTools">
+            <select id="basemap" title="Basemap">
+              <option value="osm">OpenStreetMap</option>
+              <option value="offline">Offline outlines</option>
+              <option value="none">No basemap</option>
+            </select>
+            <button class="btn small" id="btnGlobe" title="Globe / Mercator">Globe</button>
+            <button class="btn small" id="btnFitMap" title="Zoom to results">Fit</button>
+            <span class="sep"></span>
+            <span class="lbl">Draw</span>
+            <button class="btn small draw" data-draw="point">Point</button>
+            <button class="btn small draw" data-draw="line">Line</button>
+            <button class="btn small draw" data-draw="polygon">Polygon</button>
+            <span class="sep"></span>
+            <button class="btn small" id="btnExportMap" title="Download visible layers as GeoJSON">Export</button>
+          </div>
+          <div id="map" class="viewport"></div>
+          <div class="hover" id="mapHover"></div>
+        </div>
+        <div class="tab" data-tab="plane">
+          <div class="viewTools">
+            <button class="btn small" id="btnFitPlane">Fit</button>
+            <label class="small"><input type="checkbox" id="chkGrid" checked> Grid</label>
+            <label class="small"><input type="checkbox" id="chkLabels" checked> Labels</label>
+            <span class="sep"></span>
+            <span class="lbl">Draw</span>
+            <button class="btn small draw" data-draw="point">Point</button>
+            <button class="btn small draw" data-draw="line">Line</button>
+            <button class="btn small draw" data-draw="polygon">Polygon</button>
+            <span class="sep"></span>
+            <button class="btn small" id="btnExportPlane">Export</button>
+            <span class="spacer"></span>
+            <span id="planeCoords" class="coords"></span>
+          </div>
+          <div class="viewport"><canvas id="plane"></canvas></div>
+          <div class="hover" id="planeHover"></div>
+        </div>
+        <div class="tab" data-tab="results"><div class="rsTabs" id="rsTabs"></div><div class="grid" id="grid"></div></div>
+        <div class="tab" data-tab="messages"><div id="messages" class="messages"></div></div>
+        <div class="tab" data-tab="inspector"><div id="inspector" class="inspector"></div></div>
+        <div class="tab" data-tab="explain"><div id="explain" class="explain"><p class="muted">Press Explain to see the estimated plan. Spatial and vector index operators are highlighted.</p></div></div>
+        <div class="tab" data-tab="selftest"><div id="selftest" class="selftest"><p class="muted">Self-test runs every demo against your server and reports what passes. Run Install sample DB first.</p><button class="btn primary" id="btnSelfTest2">Run self-test</button></div></div>
+        <div class="layersBox" id="layersBox"></div>
+        <div class="animBar" id="animBar" hidden>
+          <button class="btn small" id="btnPlay">▶</button>
+          <input type="range" id="frameSlider" min="0" max="0" value="0">
+          <span id="frameLabel">frame 0</span>
+          <select id="animSpeed"><option value="600">slow</option><option value="250" selected>normal</option><option value="83">12 fps</option><option value="42">24 fps</option></select>
+        </div>
+        <div class="drawBox" id="drawBox" hidden>
+          <div class="drawHead"><b>Drawn shape</b><span class="muted" id="drawHint"></span></div>
+          <textarea id="drawWkt" rows="3" spellcheck="false"></textarea>
+          <div class="drawBtns">
+            <button class="btn small primary" id="btnDrawInsert">Insert into editor</button>
+            <button class="btn small" id="btnDrawCopy">Copy</button>
+            <button class="btn small" id="btnDrawDone">Done</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden><div class="modalCard"><div class="modalHead"><b id="modalTitle"></b><button class="btn icon" id="modalClose">✕</button></div><div class="modalBody" id="modalBody"></div></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="/static/vendor/codemirror.js"></script>
+<script src="/static/vendor/sql.js"></script>
+<script src="/static/vendor/show-hint.js"></script>
+<script src="/static/vendor/sql-hint.js"></script>
+<script src="/static/vendor/maplibre-gl.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
