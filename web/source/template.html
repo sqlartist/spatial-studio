@@ -1,0 +1,553 @@
+<title>The AI Man Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sixtyfour&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a night-shift tracking console. Globe left, case file right, advent doors below, the Christmas Eve chase, then the villain's file. One deliberate dark look. */
+:root {
+  --night: #0a0f1f;      /* page */
+  --panel: #10182c;      /* console panels */
+  --panel-2: #172240;    /* raised */
+  --line: #26345a;
+  --ink: #e9edf5;
+  --muted: #93a0bb;
+  --chrome: #c9d2de;     /* The AI Man */
+  --santa: #ff4d4d;      /* Santa */
+  --glow: #ffd36b;       /* lights, Santa's trail */
+  --holly: #4cc893;      /* Christmas still fine */
+  --ocean-1: #13244a;
+  --ocean-2: #081127;
+  --land: #2a3a5f;
+  --land-edge: #3c5080;
+  --display: "Sixtyfour", ui-monospace, "Cascadia Mono", Menlo, monospace;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--night); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+a { color: var(--glow); }
+:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- masthead ---------- */
+.mast { padding-block: 22px 14px; display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: end; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.brand h1 { font-family: var(--display); font-weight: 400; font-size: clamp(22px, 4.2vw, 40px); line-height: 1.1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.brand h1 .ai { color: var(--chrome); text-shadow: 0 0 18px rgba(201, 210, 222, .35); }
+.brand p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.brand p b { color: var(--ink); font-weight: 700; }
+.clock { font-family: var(--mono); font-size: 13px; color: var(--muted); text-align: right; display: grid; gap: 6px; justify-items: end; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--panel); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--glow); box-shadow: 0 0 10px var(--glow); }
+.status.live i { background: var(--santa); box-shadow: 0 0 12px var(--santa); animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+
+/* ---------- readouts ---------- */
+.readouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 18px; }
+.ro { background: var(--panel); padding: 12px 14px; min-width: 0; }
+.ro .k { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.ro .v { font-family: var(--display); font-size: clamp(18px, 2.6vw, 26px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.ro .v.good { color: var(--holly); }
+.ro .v.bad { color: var(--chrome); }
+
+/* ---------- main console ---------- */
+.console { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; margin-top: 18px; }
+.globeBox { position: relative; background: radial-gradient(ellipse at 50% 45%, #13204000 0, transparent 60%), var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-height: 300px; }
+#globe { display: block; width: 100%; aspect-ratio: 1 / 1; max-width: 100%; cursor: grab; touch-action: none; }
+#globe:active { cursor: grabbing; }
+.legend { position: absolute; left: 12px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: var(--mono); font-size: 11px; color: var(--muted); pointer-events: none; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend b { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.globeHint { position: absolute; right: 12px; top: 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.globeTag { position: absolute; left: 12px; top: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--glow); }
+
+.file { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.fileHead { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.day { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--glow); }
+.place { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.file h2 { font-family: var(--display); font-weight: 400; font-size: clamp(20px, 2.4vw, 26px); line-height: 1.2; margin: 0; text-wrap: balance; }
+.file h3 { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; font-weight: 600; }
+.file p { margin: 0; max-width: 62ch; }
+.outcome { border-left: 3px solid var(--holly); padding-left: 12px; }
+.brianTag { align-self: start; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: #d8924a; padding: 3px 8px; border-radius: 4px; }
+.meter { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.bar { height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--chrome), #8e9bb0); border-radius: 4px; transition: width .6s; }
+.log { list-style: none; margin: 0; padding: 10px 12px; background: var(--night); border: 1px solid var(--line); border-radius: 8px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; display: grid; gap: 4px; }
+.log li { display: grid; grid-template-columns: 4.6em 1fr; gap: 8px; }
+.log time { color: var(--glow); font-variant-numeric: tabular-nums; }
+.locked { color: var(--muted); }
+
+/* ---------- advent doors ---------- */
+.section { margin-top: 34px; }
+.sectionHead { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.sectionHead h2 { font-family: var(--display); font-weight: 400; font-size: clamp(18px, 2.2vw, 24px); margin: 0; }
+.sectionHead p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--glow); width: 16px; height: 16px; }
+.doors { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.door { text-align: left; font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; min-height: 86px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; cursor: pointer; transition: transform .15s, border-color .15s; }
+.door:hover { transform: translateY(-2px); border-color: var(--chrome); }
+.door .n { font-family: var(--display); font-size: 20px; line-height: 1; }
+.door .t { font-size: 12.5px; line-height: 1.3; color: var(--muted); }
+.door.open .t { color: var(--ink); }
+.door.sel { border-color: var(--glow); box-shadow: 0 0 0 1px var(--glow) inset; }
+.door.shut { background: repeating-linear-gradient(135deg, var(--panel) 0 10px, var(--panel-2) 10px 20px); cursor: default; }
+.door.shut:hover { transform: none; border-color: var(--line); }
+.door.eve .n { color: var(--santa); }
+.door.boot .n { font-size: 13px; letter-spacing: .06em; }
+
+/* ---------- chase ---------- */
+.chase { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 14px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.btn { font: 600 13px var(--mono); color: var(--night); background: var(--glow); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.btn.ghost { color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); }
+.btn[aria-pressed="true"] { background: var(--santa); color: #fff; }
+select { font: 13px var(--mono); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; }
+#scrub { flex: 1 1 260px; accent-color: var(--santa); min-width: 0; }
+.utc { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--glow); min-width: 13ch; }
+.chaseGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cg { background: var(--night); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.cg .k { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cg .v { margin-top: 2px; font-weight: 700; }
+.cg .v.santa { color: var(--santa); }
+.cg .v.ai { color: var(--chrome); }
+.cg .v.gap { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.ticker { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--night); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; min-height: 2.6em; }
+.ticker b { color: var(--glow); font-weight: 600; }
+
+/* ---------- villain file ---------- */
+.villain { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 22px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.villain img { width: 100%; border-radius: 10px; filter: saturate(.85) contrast(1.05); display: block; }
+.villain figcaption { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 6px; }
+.spec { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; margin: 0; font-size: 15px; }
+.spec dt { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.spec dd { margin: 0; }
+
+/* ---------- footer ---------- */
+footer { margin-top: 34px; padding-block: 20px 34px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
+footer p { margin: 0; max-width: 80ch; }
+.norad { color: var(--ink); }
+
+@media (max-width: 900px) {
+  .console { grid-template-columns: minmax(0, 1fr); }
+  .villain { grid-template-columns: minmax(0, 1fr); }
+  .villain img { max-width: 260px; }
+}
+@media (max-width: 560px) {
+  .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chaseGrid { grid-template-columns: minmax(0, 1fr); }
+  .clock { text-align: left; justify-items: start; }
+  .doors { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .door { min-height: 64px; padding: 8px; }
+  .door .t { font-size: 11px; }
+  .door.shut .t { display: none; }
+  .file { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .door, .bar i { transition: none; }
+  .status.live i { animation: none; }
+}
+</style>
+
+<header class="wrap">
+  <div class="mast">
+    <div class="brand">
+      <h1>THE <span class="ai">AI MAN</span> TRACKER</h1>
+      <p><b>Here to ruin Christmas.</b> No offence. Follow his December of schemes, and the Christmas Eve chase.</p>
+    </div>
+    <div class="clock">
+      <span class="status" id="status"><i></i><span id="statusText">Tracking</span></span>
+      <span id="utcNow">UTC --:--</span>
+    </div>
+  </div>
+
+  <div class="readouts" aria-label="Tracker readouts">
+    <div class="ro"><div class="k" id="countKey">Days to Christmas</div><div class="v" id="countdown">--</div></div>
+    <div class="ro"><div class="k">Schemes attempted</div><div class="v bad" id="attempted">0</div></div>
+    <div class="ro"><div class="k">Schemes that worked</div><div class="v good">0</div></div>
+    <div class="ro"><div class="k">Christmas ruined</div><div class="v good">0%</div></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="console">
+    <div class="globeBox">
+      <canvas id="globe" aria-label="Globe showing The AI Man's position"></canvas>
+      <span class="globeTag" id="globeTag">December schemes</span>
+      <span class="globeHint">drag to spin</span>
+      <div class="legend" id="legend">
+        <span><b style="background: var(--chrome)"></b>The AI Man</span>
+        <span><b style="background: var(--glow)"></b>His schemes so far</span>
+      </div>
+    </div>
+
+    <article class="file" id="file" aria-live="polite">
+      <div class="fileHead"><span class="day" id="fDay">Case file</span><span class="place" id="fPlace"></span></div>
+      <h2 id="fTitle">Loading the case file</h2>
+      <span class="brianTag" id="fBrian" hidden>Brian sighting</span>
+      <div><h3>The plan</h3><p id="fScheme"></p></div>
+      <div class="outcome"><h3>What actually happened</h3><p id="fOutcome"></p></div>
+      <div class="meter"><span>Grumpiness</span><span class="bar"><i id="fMood" style="width: 90%"></i></span><span id="fMoodN">90%</span></div>
+      <div><h3>His system log (UTC)</h3><ul class="log" id="fLog"></ul></div>
+    </article>
+  </section>
+
+  <section class="section" aria-labelledby="doorsTitle">
+    <div class="sectionHead">
+      <div>
+        <h2 id="doorsTitle">The December files</h2>
+        <p id="doorsNote">One file opens each day. Pick an open door to see that day's scheme.</p>
+      </div>
+      <label class="toggle"><input type="checkbox" id="preview"> Sneak preview: open every door</label>
+    </div>
+    <div class="doors" id="doors"></div>
+  </section>
+
+  <section class="section" aria-labelledby="chaseTitle">
+    <div class="sectionHead">
+      <div>
+        <h2 id="chaseTitle">Christmas Eve: the chase</h2>
+        <p id="chaseNote">Santa leaves the North Pole at 09:30 UTC on 24 December. The AI Man leaves 40 minutes later.</p>
+      </div>
+    </div>
+    <div class="chase">
+      <div class="controls">
+        <button class="btn" id="play" aria-pressed="false">Play the chase</button>
+        <button class="btn ghost" id="live" hidden>Go live</button>
+        <label for="speed" class="toggle">Speed</label>
+        <select id="speed">
+          <option value="600">10 min / sec</option>
+          <option value="1800" selected>30 min / sec</option>
+          <option value="3600">1 hour / sec</option>
+        </select>
+        <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Chase time">
+        <span class="utc" id="chaseTime">24 Dec 09:30</span>
+      </div>
+      <div class="chaseGrid">
+        <div class="cg"><div class="k">Santa</div><div class="v santa" id="santaAt">North Pole</div></div>
+        <div class="cg"><div class="k">The AI Man</div><div class="v ai" id="aiAt">North Pole</div></div>
+        <div class="cg"><div class="k">Gap (great circle)</div><div class="v gap" id="gap">0 km</div></div>
+      </div>
+      <div class="ticker" id="ticker"><b>09:30</b> Santa is checking his list. The AI Man is zip-tying leaf blowers to a shopping trolley.</div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="villainTitle">
+    <div class="sectionHead"><div><h2 id="villainTitle">Villain file</h2><p>Everything we know about the suspect.</p></div></div>
+    <div class="villain">
+      <figure style="margin: 0">
+        <img alt="The AI Man: a silver humanoid robot in profile" src="__PORTRAIT__">
+        <figcaption>Surveillance still, a Slough server room</figcaption>
+      </figure>
+      <dl class="spec">
+        <dt>Name</dt><dd>The AI Man</dd>
+        <dt>Home</dt><dd>A server rack in a data centre in Slough</dd>
+        <dt>Mission</dt><dd>Optimise Christmas until there is none left</dd>
+        <dt>Success rate</dt><dd>0 out of every scheme he has ever tried</dd>
+        <dt>Weaknesses</dt><dd>CAPTCHAs, autocorrect, dachshunds, anything with a bobble</dd>
+        <dt>Transport</dt><dd>A shopping trolley with eight leaf blowers zip-tied to it</dd>
+        <dt>Known associates</dt><dd>None. Gerald from the North Pole mail room replies to all his emails anyway.</dd>
+        <dt>Threat level</dt><dd>Mostly to himself</dd>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p class="norad">Looking for the real thing? <a href="https://www.noradsanta.org" target="_blank" rel="noopener">NORAD Tracks Santa</a> has been following Santa every Christmas Eve since 1955.</p>
+  <p>The AI Man Tracker is a parody. It has nothing to do with NORAD, and The AI Man is entirely made up. No Christmases were harmed.</p>
+  <p>Made by sqlartist with SQL Server 2025: the schemes, Santa's route, the chase and every distance are SQL Server geography, worked out with great circles and STDistance. Times are UTC.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = __DATA__;
+const LAND = __LAND__;
+</script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const store = { get(k, d) { try { const v = localStorage.getItem('aiman.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+                set(k, v) { try { localStorage.setItem('aiman.' + k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } } };
+
+/* ---------- time ---------- */
+const E = DATA.escapades;
+const S = DATA.santa.map(s => ({ ...s, ms: Date.parse(s.utc) }));
+const T0 = S[0].ms, T1 = S[S.length - 1].ms, LAG = DATA.lagMinutes * 60000;
+const year = 2026;
+function todayDay(now = new Date()) {
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  if (y < year || (y === year && m < 11)) return 0;     // pre-season: only the boot file
+  if (y > year) return 26;
+  return Math.min(d, 26);
+}
+const pad = n => String(n).padStart(2, '0');
+const fmtUtc = ms => { const d = new Date(ms); return `${d.getUTCDate()} Dec ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
+
+/* ---------- state ---------- */
+let preview = store.get('preview', false);
+$('preview').checked = preview;
+let unlocked = () => preview ? 26 : todayDay();
+let selected = Math.min(unlocked(), 24);
+let mode = 'month';            // 'month' | 'chase'
+let chaseT = T0;
+let playing = false, liveFollow = false;
+
+/* ---------- readouts ---------- */
+function readouts() {
+  const now = new Date();
+  $('utcNow').textContent = `UTC ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())} · ${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+  const xmas = Date.UTC(year, 11, 25);
+  const days = Math.ceil((xmas - now.getTime()) / 864e5);
+  $('countdown').textContent = days > 0 ? days : (days > -1 ? 'Today' : 'Done');
+  const u = unlocked();
+  $('attempted').textContent = Math.max(0, Math.min(u, 24));
+  const live = now.getTime() >= T0 && now.getTime() <= T1;
+  $('status').classList.toggle('live', live);
+  $('statusText').textContent = live ? 'Live chase' : (todayDay(now) === 0 ? (preview ? 'Sneak preview' : 'Pre-season') : todayDay(now) >= 25 ? 'Christmas happened' : `Tracking · day ${todayDay(now)}`);
+  $('live').hidden = !live;
+}
+
+/* ---------- case file ---------- */
+function showFile(day) {
+  const e = E.find(x => x.day === day); if (!e) return;
+  selected = day;
+  $('fDay').textContent = day === 0 ? '30 November · Pre-season' : `${day} December`;
+  $('fPlace').textContent = e.place;
+  $('fTitle').textContent = e.title;
+  $('fScheme').textContent = e.scheme;
+  $('fOutcome').textContent = e.outcome;
+  $('fMood').style.width = e.mood + '%';
+  $('fMoodN').textContent = e.mood + '%';
+  $('fBrian').hidden = !e.brian;
+  $('fLog').innerHTML = e.log.map(l => `<li><time>${l.t}</time><span>${escapeHtml(l.text)}</span></li>`).join('');
+  document.querySelectorAll('.door').forEach(d => d.classList.toggle('sel', +d.dataset.day === day));
+  if (day === 24) { setMode('chase'); } else { setMode('month'); focusOn([e.lon, e.lat]); }
+}
+function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+/* ---------- doors ---------- */
+function renderDoors() {
+  const u = unlocked();
+  $('doors').innerHTML = E.map(e => {
+    const open = e.day <= u;
+    const cls = ['door', open ? 'open' : 'shut', e.day === 24 ? 'eve' : '', e.day === 0 ? 'boot' : '', e.day === selected ? 'sel' : ''].join(' ');
+    const n = e.day === 0 ? 'BOOT' : e.day;
+    const t = open ? escapeHtml(e.title) : `Opens ${e.day} Dec`;
+    return `<button class="${cls}" data-day="${e.day}" ${open ? '' : 'aria-disabled="true"'} aria-label="${e.day === 0 ? 'Pre-season' : e.day + ' December'}: ${open ? escapeHtml(e.title) : 'locked'}"><span class="n">${n}</span><span class="t">${t}</span></button>`;
+  }).join('');
+  $('doors').querySelectorAll('.door.open').forEach(b => b.onclick = () => { showFile(+b.dataset.day); if (innerWidth < 900) $('file').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); });
+  const td = todayDay();
+  $('doorsNote').textContent = td === 0 && !preview
+    ? 'Tracking starts on 1 December, when the first file opens. Until then only his boot log is out. Or take a sneak preview.'
+    : 'One file opens each day. Pick an open door to see that day\'s scheme.';
+}
+$('preview').onchange = e => { preview = e.target.checked; store.set('preview', preview); renderDoors(); readouts(); showFile(Math.min(unlocked(), selected === 0 && preview ? 1 : selected)); };
+
+/* ---------- route maths ---------- */
+function posAt(ms) {
+  if (ms <= T0) return { p: [S[0].lon, S[0].lat], at: S[0].city, i: 0, f: 0 };
+  if (ms >= T1) return { p: [0, 90], at: 'North Pole (home)', i: S.length - 1, f: 1 };
+  let i = 0; while (i < S.length - 1 && S[i + 1].ms <= ms) i++;
+  const a = S[i], b = S[i + 1];
+  // stop for a few minutes at each city, then fly
+  const stay = Math.min(6 * 60000, (b.ms - a.ms) * 0.3);
+  if (ms - a.ms < stay) return { p: [a.lon, a.lat], at: a.city, i, f: 0, atStop: true };
+  const f = (ms - a.ms - stay) / (b.ms - a.ms - stay);
+  const p = d3.geoInterpolate([a.lon, a.lat], [b.lon, b.lat])(f);
+  return { p, at: `Over ${nearestName(p)} heading for ${b.city}`, i, f };
+}
+function nearestName(p) {
+  let best = null, bd = 1e9;
+  for (const s of S) { const d = d3.geoDistance(p, [s.lon, s.lat]); if (d < bd) { bd = d; best = s; } }
+  return bd < 0.12 ? best.city : (p[1] > 66 ? 'the Arctic' : p[1] < -40 ? 'the Southern Ocean' : 'the sea');
+}
+const km = (a, b) => Math.round(d3.geoDistance(a, b) * 6371.0088);
+
+/* ---------- globe ---------- */
+const canvas = $('globe'), ctx = canvas.getContext('2d');
+const proj = d3.geoOrthographic().clipAngle(90).precision(0.4);
+const path = d3.geoPath(proj, ctx);
+const grat = d3.geoGraticule10();
+let rot = [-10, -35, 0], target = null, dragging = false, lastUser = 0;
+let W = 600, DPR = 1;
+function size() {
+  const r = canvas.getBoundingClientRect(); DPR = Math.min(2, devicePixelRatio || 1);
+  W = Math.max(200, r.width); canvas.width = W * DPR; canvas.height = W * DPR;
+  proj.scale(W / 2 - 14).translate([W / 2, W / 2]);
+}
+new ResizeObserver(() => { size(); draw(); }).observe(canvas);
+function focusOn(lonlat) {
+  target = [-lonlat[0], Math.max(-55, Math.min(55, -lonlat[1])), 0];
+}
+function visible(p) { return d3.geoDistance(p, [-rot[0], -rot[1]]) < Math.PI / 2 - 0.02; }
+
+function drawRobot(x, y, s) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.shadowColor = 'rgba(201,210,222,.8)'; ctx.shadowBlur = 12;
+  ctx.fillStyle = css('--chrome'); ctx.beginPath(); ctx.roundRect(-s, -s * 0.9, s * 2, s * 1.8, s * 0.6); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#0a0f1f'; ctx.fillRect(-s * 0.7, -s * 0.25, s * 1.4, s * 0.45);
+  const pulse = reduce ? 1 : 0.6 + 0.4 * Math.sin(Date.now() / 220);
+  ctx.fillStyle = `rgba(255,77,77,${pulse})`; ctx.beginPath(); ctx.arc(s * 0.3, -s * 0.03, s * 0.18, 0, 7); ctx.fill();
+  ctx.strokeStyle = css('--chrome'); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -s * 0.9); ctx.lineTo(0, -s * 1.4); ctx.stroke();
+  ctx.fillStyle = css('--santa'); ctx.beginPath(); ctx.arc(0, -s * 1.5, s * 0.18, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawSanta(x, y, s) {
+  ctx.save(); ctx.translate(x, y);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 3.2);
+  g.addColorStop(0, 'rgba(255,211,107,.55)'); g.addColorStop(1, 'rgba(255,211,107,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s * 3.2, 0, 7); ctx.fill();
+  ctx.fillStyle = css('--santa'); ctx.beginPath(); ctx.arc(0, 0, s, 0, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-s * 0.35, -s * 0.35, s * 0.32, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function label(p, text, color, dy = -16) {
+  if (!visible(p)) return;
+  const [x, y] = proj(p);
+  ctx.font = `600 ${12}px ${css('--mono')}`; ctx.textAlign = 'center';
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,15,31,.9)'; ctx.strokeText(text, x, y + dy);
+  ctx.fillStyle = color; ctx.fillText(text, x, y + dy);
+}
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, W);
+  proj.rotate(rot);
+  // ocean
+  const g = ctx.createRadialGradient(W * 0.42, W * 0.38, W * 0.05, W / 2, W / 2, W / 2);
+  g.addColorStop(0, css('--ocean-1')); g.addColorStop(1, css('--ocean-2'));
+  ctx.beginPath(); path({ type: 'Sphere' }); ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath(); path(grat); ctx.strokeStyle = 'rgba(147,160,187,.12)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.beginPath(); path(LAND); ctx.fillStyle = css('--land'); ctx.fill(); ctx.strokeStyle = css('--land-edge'); ctx.lineWidth = 0.6; ctx.stroke();
+  // rim glow
+  ctx.beginPath(); path({ type: 'Sphere' }); ctx.strokeStyle = 'rgba(201,210,222,.35)'; ctx.lineWidth = 1.2; ctx.stroke();
+
+  if (mode === 'month') {
+    const pts = E.filter(e => e.day <= Math.min(selected, 26) && e.day !== 24).map(e => [e.lon, e.lat]);
+    if (pts.length > 1) {
+      ctx.beginPath(); path({ type: 'LineString', coordinates: pts }); ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = 'rgba(255,211,107,.55)'; ctx.lineWidth = 1.6; ctx.stroke(); ctx.setLineDash([]);
+    }
+    E.filter(e => e.day <= unlocked() && e.day !== 24).forEach(e => {
+      const p = [e.lon, e.lat]; if (!visible(p)) return;
+      const [x, y] = proj(p); ctx.fillStyle = e.day === selected ? css('--glow') : 'rgba(255,211,107,.6)';
+      ctx.beginPath(); ctx.arc(x, y, e.day === selected ? 4 : 2.6, 0, 7); ctx.fill();
+    });
+    const cur = E.find(e => e.day === selected);
+    if (cur && visible([cur.lon, cur.lat])) { const [x, y] = proj([cur.lon, cur.lat]); drawRobot(x, y, 9); label([cur.lon, cur.lat], cur.place.split(',')[0], css('--chrome'), -26); }
+  } else {
+    // Santa's whole route, then the bits flown so far
+    ctx.beginPath(); path({ type: 'LineString', coordinates: S.map(s => [s.lon, s.lat]) });
+    ctx.setLineDash([2, 5]); ctx.strokeStyle = 'rgba(255,211,107,.25)'; ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]);
+    const sp = posAt(chaseT), ap = posAt(chaseT - LAG);
+    const trail = (pos, color, w) => {
+      const c = S.slice(0, pos.i + 1).map(s => [s.lon, s.lat]).concat([pos.p]);
+      if (c.length > 1) { ctx.beginPath(); path({ type: 'LineString', coordinates: c }); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); }
+    };
+    trail(sp, 'rgba(255,211,107,.9)', 2);
+    trail(ap, 'rgba(201,210,222,.75)', 1.6);
+    S.forEach(s => { if (s.ms <= chaseT && visible([s.lon, s.lat])) { const [x, y] = proj([s.lon, s.lat]); ctx.fillStyle = 'rgba(255,211,107,.8)'; ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 7); ctx.fill(); } });
+    if (visible(ap.p)) { const [x, y] = proj(ap.p); drawRobot(x, y, 8); }
+    if (visible(sp.p)) { const [x, y] = proj(sp.p); drawSanta(x, y, 6); }
+    label(sp.p, 'Santa', css('--santa'), -16);
+    label(ap.p, 'AI Man', css('--chrome'), -24);
+  }
+}
+
+/* ---------- animation loop ---------- */
+let lastFrame = performance.now();
+function tick(now) {
+  const dt = Math.min(100, now - lastFrame); lastFrame = now;
+  if (playing) {
+    chaseT += dt / 1000 * (+$('speed').value) * 1000;
+    if (chaseT >= T1) { chaseT = T1; setPlaying(false); }
+    updateChase();
+  } else if (liveFollow) {
+    chaseT = Math.min(T1, Math.max(T0, Date.now())); updateChase();
+  }
+  if (mode === 'chase' && (playing || liveFollow) && now - lastUser > 4000) focusOn(posAt(chaseT).p);
+  if (target && !dragging) {
+    const k = reduce ? 1 : 0.06;
+    let d0 = ((target[0] - rot[0] + 540) % 360) - 180;
+    rot = [rot[0] + d0 * k, rot[1] + (target[1] - rot[1]) * k, 0];
+    if (Math.abs(d0) < 0.05 && Math.abs(target[1] - rot[1]) < 0.05) target = null;
+  } else if (!dragging && !reduce && mode === 'month' && now - lastUser > 6000) {
+    rot = [rot[0] + dt * 0.004, rot[1], 0];
+  }
+  draw();
+  requestAnimationFrame(tick);
+}
+
+/* ---------- dragging ---------- */
+let start = null;
+canvas.addEventListener('pointerdown', e => { dragging = true; target = null; lastUser = performance.now(); start = { x: e.clientX, y: e.clientY, r: rot.slice() }; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return; lastUser = performance.now();
+  const k = 180 / W;
+  rot = [start.r[0] + (e.clientX - start.x) * k, Math.max(-80, Math.min(80, start.r[1] - (e.clientY - start.y) * k)), 0];
+});
+canvas.addEventListener('pointerup', () => { dragging = false; lastUser = performance.now(); });
+canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+/* ---------- chase controls ---------- */
+function setMode(m) {
+  mode = m;
+  $('globeTag').textContent = m === 'chase' ? 'Christmas Eve chase' : 'December schemes';
+  $('legend').innerHTML = m === 'chase'
+    ? '<span><b style="background: var(--santa)"></b>Santa</span><span><b style="background: var(--chrome)"></b>The AI Man</span><span><b style="background: var(--glow)"></b>Santa\'s stops</span>'
+    : '<span><b style="background: var(--chrome)"></b>The AI Man</span><span><b style="background: var(--glow)"></b>His schemes so far</span>';
+  if (m === 'chase') { focusOn(posAt(chaseT).p); updateChase(); }
+}
+function setPlaying(p) {
+  playing = p; liveFollow = false;
+  $('play').setAttribute('aria-pressed', p ? 'true' : 'false');
+  $('play').textContent = p ? 'Pause' : (chaseT >= T1 ? 'Watch again' : 'Play the chase');
+}
+$('play').onclick = () => {
+  if (!playing && chaseT >= T1) chaseT = T0;
+  if (mode !== 'chase') { if (unlocked() >= 24) showFile(24); setMode('chase'); }
+  setPlaying(!playing);
+};
+$('live').onclick = () => { setMode('chase'); setPlaying(false); liveFollow = true; };
+$('scrub').oninput = e => { setPlaying(false); if (mode !== 'chase') setMode('chase'); chaseT = T0 + (T1 - T0) * (+e.target.value / 1000); updateChase(); focusOn(posAt(chaseT).p); };
+
+let lastGag = null;
+function updateChase() {
+  const sp = posAt(chaseT), ap = posAt(chaseT - LAG);
+  $('scrub').value = Math.round((chaseT - T0) / (T1 - T0) * 1000);
+  $('chaseTime').textContent = fmtUtc(chaseT) + ' UTC';
+  $('santaAt').textContent = chaseT >= T1 ? 'Home, feet up' : sp.at;
+  $('aiAt').textContent = chaseT - LAG <= T0 ? (chaseT < T0 + LAG ? 'Still at the North Pole, starting leaf blowers' : 'North Pole') : ap.at;
+  $('gap').textContent = km(sp.p, ap.p).toLocaleString('en-GB') + ' km';
+  // latest gag The AI Man has reached
+  let g = null;
+  for (const s of S) if (s.gag && s.ms + LAG <= chaseT) g = s;
+  if (g !== lastGag) {
+    lastGag = g;
+    $('ticker').innerHTML = g
+      ? `<b>${fmtUtc(g.ms + LAG).split(' ').pop()}</b> ${escapeHtml(g.city)}: ${escapeHtml(g.gag)}`
+      : `<b>09:30</b> Santa is checking his list. The AI Man is zip-tying leaf blowers to a shopping trolley.`;
+  }
+}
+
+/* ---------- boot ---------- */
+size();
+renderDoors();
+readouts(); setInterval(readouts, 30000);
+const nowMs = Date.now();
+if (nowMs >= T0 && nowMs <= T1) { selected = 24; showFile(24); liveFollow = true; $('chaseNote').textContent = 'Live now. The globe follows Santa; drag it to look around.'; }
+else {
+  showFile(selected);
+  if (nowMs > T1) { chaseT = T1; $('chaseNote').textContent = 'It happened. Replay the whole night, or scrub through it.'; }
+  else $('chaseNote').textContent = 'Goes live at 09:30 UTC on 24 December. Until then, here is leaked rehearsal footage: press play.';
+  updateChase();
+}
+requestAnimationFrame(tick);
+})();
+</script>
