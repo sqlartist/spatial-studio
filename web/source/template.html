@@ -78,6 +78,20 @@ a { color: var(--glow); }
 .log time { color: var(--glow); font-variant-numeric: tabular-nums; }
 .locked { color: var(--muted); }
 
+/* ---------- the SQL behind each door ---------- */
+.sqlDoor { margin-top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.sqlDoor .sqlHead { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; }
+.sqlDoor h3 { font-family: var(--display); font-weight: 400; font-size: 17px; margin: 0; color: var(--glow); }
+.sqlDoor .sqlFeature { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.sqlDoor h4 { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; font-weight: 400; }
+.sqlDoor pre { margin: 0; background: var(--night); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.55; tab-size: 4; }
+.sqlDoor pre.out { color: var(--ink); }
+.sqlDoor .kw { color: #8fb8ff; font-weight: 600; }
+.sqlDoor .fn { color: var(--glow); }
+.sqlDoor .st { color: #9fdc9a; }
+.sqlDoor .cm { color: var(--muted); font-style: italic; }
+.sqlDoor .runIt { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
 /* ---------- advent doors ---------- */
 .section { margin-top: 34px; }
 .sectionHead { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
@@ -202,6 +216,14 @@ footer p { margin: 0; max-width: 80ch; }
       <label class="toggle"><input type="checkbox" id="preview"> Sneak preview: open every door</label>
     </div>
     <div class="doors" id="doors"></div>
+    <div class="sqlDoor" id="sqlDoor" hidden aria-live="polite">
+      <div class="sqlHead"><h3 id="sqlTitle">Behind the door</h3><span class="sqlFeature" id="sqlFeature"></span></div>
+      <h4>The SQL</h4>
+      <pre><code id="sqlCode"></code></pre>
+      <h4>What SQL Server 2025 returned</h4>
+      <pre class="out" id="sqlOut"></pre>
+      <p class="runIt">Every door is self-contained: paste it into SQL Server 2025 and run it. All 24 are in <a href="https://github.com/sqlartist/spatial-studio/blob/main/demos/16_advent_doors.sql">16_advent_doors.sql</a>.</p>
+    </div>
   </section>
 
   <section class="section" aria-labelledby="chaseTitle">
@@ -326,7 +348,31 @@ function showFile(day) {
   $('fBrian').hidden = !e.brian;
   $('fLog').innerHTML = e.log.map(l => `<li><time>${l.t}</time><span>${escapeHtml(l.text)}</span></li>`).join('');
   document.querySelectorAll('.door').forEach(d => d.classList.toggle('sel', +d.dataset.day === day));
+  showSql(day);
   if (day === 24) { setMode('chase'); } else { setMode('month'); focusOn([e.lon, e.lat]); }
+}
+const DOORS = __DOORS__;
+const SQL_WORDS = new Set('SELECT|FROM|WHERE|AND|OR|NOT|IN|AS|ON|JOIN|CROSS|APPLY|GROUP|BY|ORDER|ASC|DESC|TOP|WITH|UNION|ALL|INSERT|INTO|VALUES|UPDATE|SET|DELETE|MERGE|USING|WHEN|MATCHED|THEN|ELSE|END|CASE|DECLARE|TABLE|CREATE|DROP|ALTER|IF|EXISTS|SEQUENCE|START|INCREMENT|CYCLE|MINVALUE|MAXVALUE|NEXT|VALUE|FOR|OVER|PARTITION|ROWS|UNBOUNDED|PRECEDING|IGNORE|NULLS|PIVOT|OUTPUT|IS|NULL|BETWEEN|WITHIN|PRIMARY|KEY|GENERATED|ALWAYS|ROW|PERIOD|SYSTEM_TIME|SYSTEM_VERSIONING|HISTORY_TABLE|OFF|WAITFOR|DELAY|TARGET|AT|TIME|ZONE|GO|int|bit|float|date|datetime2|datetimeoffset|nvarchar|varchar|char|binary|varbinary|decimal|geography|vector|time'.toUpperCase().split('|'));
+function highlightSql(src) {
+  return escapeHtml(src).split('\n').map(line => {
+    const c = line.indexOf('--');
+    const code = c >= 0 ? line.slice(0, c) : line, cm = c >= 0 ? line.slice(c) : '';
+    const parts = code.split(/('(?:[^']|'')*')/g).map((p, i) => i % 2
+      ? `<span class="st">${p}</span>`
+      : p.replace(/(@?)\b([A-Za-z_][A-Za-z0-9_]*)\b(\s*\()?/g, (m, at, w, paren) => at ? m
+           : SQL_WORDS.has(w.toUpperCase()) ? `<span class="kw">${w}</span>${paren || ''}`
+           : paren && /^[A-Z_0-9]+$/.test(w) ? `<span class="fn">${w}</span>${paren}` : m));
+    return parts.join('') + (cm ? `<span class="cm">${cm}</span>` : '');
+  }).join('\n');
+}
+function showSql(day) {
+  const d = DOORS[day];
+  $('sqlDoor').hidden = !d;
+  if (!d) return;
+  $('sqlTitle').textContent = `Behind door ${day}: ${d.title}`;
+  $('sqlFeature').textContent = d.feature;
+  $('sqlCode').innerHTML = highlightSql(d.code);
+  $('sqlOut').textContent = d.output;
 }
 function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 

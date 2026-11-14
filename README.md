@@ -56,6 +56,7 @@ You can also set the connection through environment variables: `SPATIAL_STUDIO_S
 | 12 Vector search | `VECTOR` basics, the globe as a vector space, k-NN two ways, DiskANN `VECTOR_SEARCH`, **shape search with Fourier descriptors computed in T-SQL**, shape recognition accuracy, query by sketch, hybrid spatial + vector search, k-means in T-SQL, ANN recall |
 | 13 Animation | growing buffers, rotation, a flight along a geodesic, progressive simplification, morphing through vector space |
 | 15 The AI Man Tracker | a parody Christmas tracker: his December of schemes on the globe, mileage, Santa's timetable, the animated Christmas Eve chase, and a FOR JSON export of the web page's data |
+| 16 The AI Man's advent doors | 24 small self-contained demos, one behind each door of the tracker page, each showing a little-known feature: STRING_SPLIT ordinals, GENERATE_SERIES, SEQUENCE, VECTOR_DISTANCE, APPROX_COUNT_DISTINCT, DATE_BUCKET, IGNORE NULLS, temporal tables, REGEXP_LIKE, MERGE OUTPUT and more |
 | 14 Toon | **Brian in "The Ball"**: a 20-second cut-out cartoon rendered by SQL Server - puppet rig, keyframes, motion paths, felt-tip boil, and a scene of your own to direct |
 
 ## What makes it different

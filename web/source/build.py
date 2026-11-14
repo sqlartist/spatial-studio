@@ -1,7 +1,7 @@
 import base64, pathlib, json, sys
 h = pathlib.Path(__file__).parent
 t = (h/'template.html').read_text()
-t = t.replace('__DATA__', (h/'data.json').read_text()).replace('__LAND__', (h/'land.json').read_text())
+t = t.replace('__DATA__', (h/'data.json').read_text()).replace('__LAND__', (h/'land.json').read_text()).replace('__DOORS__', (h/'doors.json').read_text())
 t = t.replace('__PORTRAIT__', 'data:image/jpeg;base64,' + base64.b64encode((h/'portrait.jpg').read_bytes()).decode())
 (h/'ai-man-tracker.html').write_text(t)
 # local test copy: d3 from disk, full html skeleton
